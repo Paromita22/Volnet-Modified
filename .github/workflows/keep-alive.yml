@@ -17,8 +17,16 @@ jobs:
           # Replace "keep_alive" below with the table you want to query.
           TABLE="keep_alive"
 
+          # Strip any trailing slash from the URL secret so we never end up
+          # with a double slash (e.g. ".co//rest/v1/...") which PostgREST
+          # rejects with a "PGRST125 Invalid path" error.
+          RAW_URL="${{ secrets.SUPABASE_URL }}"
+          CLEAN_URL="${RAW_URL%/}"
+
+          echo "URL length (sanity check only): ${#CLEAN_URL}"
+
           HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" \
-            -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/${TABLE}?select=*&limit=1" \
+            -X GET "${CLEAN_URL}/rest/v1/${TABLE}?select=*&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
             -H "Cache-Control: no-cache")
